@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"ksql/disc"
 	"log"
 	"os"
+
+	"ksql/src/disk"
 )
 
 func main() {
@@ -13,7 +14,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dm := disc.NewDiskManager(f1)
+	dm := disk.NewDiskManager(f1)
 	// dm.WritePageData(nextID, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17})
-	fmt.Println("res: ", dm.ReadPageData(disc.PageID(1)))
+	fmt.Println("res: ", dm.ReadPageData(disk.PageID(1)))
 }
