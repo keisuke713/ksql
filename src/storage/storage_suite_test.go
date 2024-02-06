@@ -1,4 +1,4 @@
-package disk_test
+package storage_test
 
 import (
 	"testing"

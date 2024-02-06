@@ -1,4 +1,4 @@
-package disk
+package storage
 
 import (
 	"os"
@@ -13,7 +13,7 @@ var _ = Describe("DiskManagerのテスト", func() {
 	)
 	Describe("ReadPageData", func() {
 		var (
-			res []byte
+			res [PageSize]byte
 		)
 		const (
 			fPath = "test_table"
@@ -23,7 +23,7 @@ var _ = Describe("DiskManagerのテスト", func() {
 				f, _ := os.Create(fPath)
 				dm = NewDiskManager(f)
 
-				data := make([]byte, PageSize)
+				var data [PageSize]byte
 				nextPageID := dm.AllocatePage()
 				dm.WritePageData(nextPageID, data)
 
@@ -34,7 +34,7 @@ var _ = Describe("DiskManagerのテスト", func() {
 				dm.WritePageData(nextPageID, data)
 				res = dm.ReadPageData(PageID(1))
 			})
-			It("", func() {
+			It("正しいバイトが取得される", func() {
 				Expect(res[0]).To(Equal(byte(1)))
 				Expect(res[1]).To(Equal(byte(2)))
 			})

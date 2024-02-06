@@ -1,26 +1,20 @@
-package disk
+package storage
 
 import (
 	"os"
 )
 
 type (
-	PageID uint64
-
 	DiskManager interface {
 		AllocatePage() PageID
-		ReadPageData(pageID PageID) []byte
-		WritePageData(pageID PageID, data []byte)
+		ReadPageData(pageID PageID) [PageSize]byte
+		WritePageData(pageID PageID, data [PageSize]byte)
 	}
 
 	DiskManagerImpl struct {
 		heapFile   *os.File
 		nextPageID uint64
 	}
-)
-
-const (
-	PageSize = 4 * 1_024 // 4KB
 )
 
 func NewDiskManager(heapFile *os.File) DiskManager {
@@ -49,19 +43,23 @@ func (dm *DiskManagerImpl) AllocatePage() PageID {
 	return PageID(pageID)
 }
 
-func (dm *DiskManagerImpl) ReadPageData(pageID PageID) []byte {
+func (dm *DiskManagerImpl) ReadPageData(pageID PageID) [PageSize]byte {
 	offset := PageSize * pageID
 	data := make([]byte, PageSize)
 	_, err := dm.heapFile.ReadAt(data, int64(offset))
 	if err != nil {
 		panic(err)
 	}
-	return data
+
+	var bytesArr [PageSize]byte
+	for i, b := range data {
+		bytesArr[i] = b
+	}
+	return bytesArr
 }
 
-func (dm *DiskManagerImpl) WritePageData(pageID PageID, data []byte) {
+func (dm *DiskManagerImpl) WritePageData(pageID PageID, data [PageSize]byte) {
 	offset := PageSize * pageID
 	// pageSizeより大きいデータは書き込まないようにする
-	var b []byte = data[:PageSize]
-	dm.heapFile.WriteAt(b, int64(offset))
+	dm.heapFile.WriteAt(data[:], int64(offset))
 }
