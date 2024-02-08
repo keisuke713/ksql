@@ -238,7 +238,6 @@ var _ = Describe("Pageのテスト", func() {
 
 			minTargetVal uint32
 			maxTargetVal uint32
-			mode         SearchMode
 
 			minPageID *PageID
 			maxPageID *PageID
@@ -255,16 +254,13 @@ var _ = Describe("Pageのテスト", func() {
 			if err != nil {
 				panic(err)
 			}
-			minPageID, maxPageID, err = p.SearchByV2(dm, minTargetVal, maxTargetVal, mode)
+			minPageID, maxPageID, err = p.SearchByV2(dm, minTargetVal, maxTargetVal)
 		})
 		JustAfterEach(func() {
 			minPageID = nil
 			maxPageID = nil
 		})
 		Context("定数での絞り込みの場合", func() {
-			BeforeEach(func() {
-				mode = SearchModeConst
-			})
 			Context("対象が見つかった場合", func() {
 				BeforeEach(func() {
 					minTargetVal = 31
@@ -298,9 +294,6 @@ var _ = Describe("Pageのテスト", func() {
 		})
 		// 複数ページにまたがるように
 		Context("範囲検索の場合", func() {
-			BeforeEach(func() {
-				mode = SearchModeRange
-			})
 			Context("greaterのみの場合", func() {
 				// 20より大きい
 				BeforeEach(func() {
@@ -353,9 +346,11 @@ var _ = Describe("Pageのテスト", func() {
 			})
 		})
 		// TODO
+		// minとmaxにそれぞれ指定したら良いだけ
 		Context("フルスキャン", func() {
 			BeforeEach(func() {
-				mode = SearchModeAll
+				minTargetVal = MinTargetValue
+				maxTargetVal = MaxTargetValue
 			})
 		})
 	})

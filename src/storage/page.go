@@ -126,15 +126,16 @@ func (p *Page) searchBy(dm DiskManager, minTargetVal uint32, maxTargetVal uint32
 // page.SearchByでは下限上限を元にpageの範囲を求める(あれ、searchModeどこで使う？->ALLだったら全ページ取る必要があるのか)
 
 // TODO
-// iteratorにpageの下限上限とtargetValsetを渡して実際の値を求める(ここではindexを使うのかvalueなのかの判別がしたい)
+// seachModeはpageで使わないようにしよう(iterで使う)。pageではただminとmaxに則ってページIDを取得するだけ(それでALLも対応できる)
+// iteratorにpageの下限上限とmodeとtargetValsetを渡して実際の値を求める(ここではindexを使うのかvalueなのかの判別がしたい)
 // インサート
-// キーだけじゃなく、バリューでも絞り込めるようにする(これはALLですな)
+// キーだけじゃなく、バリューでも絞り込めるようにする(これはALLですな、これはpageを呼び出すレイヤー)
 // Pageのこのメソッド呼ぶ時点ですでに対象のインデックス(ファイル)は決まっているのでindexを指定する必要はない、constかallの判別だけで大丈夫
-func (p *Page) SearchByV2(dm DiskManager, minTargetVal uint32, maxTargetVal uint32, searchMode SearchMode) (*PageID, *PageID, error) {
-	return p.searchByV2(dm, minTargetVal, maxTargetVal, searchMode, nil, nil)
+func (p *Page) SearchByV2(dm DiskManager, minTargetVal uint32, maxTargetVal uint32) (*PageID, *PageID, error) {
+	return p.searchByV2(dm, minTargetVal, maxTargetVal, nil, nil)
 }
 
-func (p *Page) searchByV2(dm DiskManager, minTargetVal uint32, maxTargetVal uint32, searchMode SearchMode, minPageID *PageID, maxPageID *PageID) (*PageID, *PageID, error) {
+func (p *Page) searchByV2(dm DiskManager, minTargetVal uint32, maxTargetVal uint32, minPageID *PageID, maxPageID *PageID) (*PageID, *PageID, error) {
 	// leafの場合key >= maxTargetValになるまで続ける
 	if p.NodeType == NodeTypeLeaf {
 		if minPageID == nil {
@@ -157,7 +158,7 @@ func (p *Page) searchByV2(dm DiskManager, minTargetVal uint32, maxTargetVal uint
 		if err != nil {
 			return nil, nil, err
 		}
-		return nextPage.searchByV2(dm, minTargetVal, maxTargetVal, searchMode, minPageID, maxPageID)
+		return nextPage.searchByV2(dm, minTargetVal, maxTargetVal, minPageID, maxPageID)
 	}
 	// internal nodeの場合、対象のchildIDを探す
 	nextPageID := InvalidPageID
@@ -175,5 +176,5 @@ func (p *Page) searchByV2(dm DiskManager, minTargetVal uint32, maxTargetVal uint
 	if err != nil {
 		return nil, nil, err
 	}
-	return nextPage.searchByV2(dm, minTargetVal, maxTargetVal, searchMode, minPageID, maxPageID)
+	return nextPage.searchByV2(dm, minTargetVal, maxTargetVal, minPageID, maxPageID)
 }
