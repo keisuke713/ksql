@@ -16,7 +16,7 @@ type (
 		PrevPageID   PageID   `json:"prev_page_id"`
 		NextPageID   PageID   `json:"next_page_id"`
 		RightPointer PageID   `json:"right_pointer"` // leafの時は使わない
-		Items        []Pair   `json:"items"`
+		Items        []Pair   `json:"items"`         // `items` 内ではpairはkeyの昇順で並んでいることが保証される
 	}
 
 	// leafの時valueは実際のデータ、中間ノードの時は子のページID
@@ -29,6 +29,7 @@ type (
 const (
 	SearchModeConst SearchMode = iota
 	SearchModeRange
+	SearchModeAll
 )
 
 const (
@@ -40,6 +41,9 @@ const (
 	PageSize = 4 * 1_024 // 4KB
 
 	InvalidPageID PageID = -1
+
+	MinTargetValue uint32 = 0
+	MaxTargetValue uint32 = 4_294_967_295
 )
 
 func NewPage(bytes [PageSize]byte) (*Page, error) {
@@ -60,30 +64,50 @@ func NewPage(bytes [PageSize]byte) (*Page, error) {
 }
 
 // 欲を言えばsaechModeで検索対象のカラム、その値、等号なのか範囲なのかを判定させたい
-func (p *Page) SearchBy(dm DiskManager, key uint32, searchMode SearchMode) ([]Pair, error) {
-	return p.searchBy(dm, key, searchMode)
+func (p *Page) SearchBy(dm DiskManager, minTargetVal uint32, maxTargetVal uint32, searchMode SearchMode) ([]Pair, error) {
+	res := make([]Pair, 0)
+	return p.searchBy(dm, minTargetVal, maxTargetVal, searchMode, &res)
 }
 
 // TODO
-// 範囲検索
+// min,maxじゃなくてvalSetにしたいいやそれだと上限加減がわからないk？？やっぱり両方必要？
 // IN検索
 // インサート
-// キーだけじゃなく、バリューでも絞り込めるようにする
-func (p *Page) searchBy(dm DiskManager, key uint32, searchMode SearchMode) ([]Pair, error) {
+// キーだけじゃなく、バリューでも絞り込めるようにする(これはALLですな)
+// Pageのこのメソッド呼ぶ時点ですでに対象のインデックス(ファイル)は決まっているのでindexを指定する必要はない、constかallの判別だけで大丈夫
+func (p *Page) searchBy(dm DiskManager, minTargetVal uint32, maxTargetVal uint32, searchMode SearchMode, res *[]Pair) ([]Pair, error) {
 	// leafの場合keyに合致する値を見つける
 	if p.NodeType == NodeTypeLeaf {
-		var res []Pair
 		for _, pair := range p.Items {
-			if pair.Key == key {
-				res = append(res, pair)
+			// 等号比較の場合は一つ合致したら返す
+			if searchMode == SearchModeConst {
+				if pair.Key == minTargetVal {
+					*res = append(*res, pair)
+					return *res, nil
+				}
+			} else if searchMode == SearchModeRange {
+				if pair.Key < maxTargetVal {
+					*res = append(*res, pair)
+				} else {
+					return *res, nil
+				}
 			}
 		}
-		return res, nil
+		// Page内の値が全てTargetValより小さいなら次のページも見る
+		if p.NextPageID == InvalidPageID {
+			return *res, nil
+		}
+		bytes := dm.ReadPageData(p.NextPageID)
+		nextPage, err := NewPage(bytes)
+		if err != nil {
+			return nil, err
+		}
+		return nextPage.searchBy(dm, minTargetVal, maxTargetVal, searchMode, res)
 	}
 	// internal nodeの場合、対象のchildIDを探す
 	nextPageID := InvalidPageID
 	for _, pair := range p.Items {
-		if pair.Key > key {
+		if pair.Key > minTargetVal {
 			nextPageID = PageID(pair.Value)
 			break
 		}
@@ -96,5 +120,5 @@ func (p *Page) searchBy(dm DiskManager, key uint32, searchMode SearchMode) ([]Pa
 	if err != nil {
 		return nil, err
 	}
-	return nextPage.searchBy(dm, key, searchMode)
+	return nextPage.searchBy(dm, minTargetVal, maxTargetVal, searchMode, res)
 }

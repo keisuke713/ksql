@@ -116,15 +116,16 @@ var _ = Describe("Pageのテスト", func() {
 			})
 		})
 	})
-	Describe("SearchBy", func() {
+	FDescribe("SearchBy", func() {
 		var (
 			p   *Page
 			err error
 
 			dm DiskManager
 
-			key  uint32
-			mode SearchMode
+			minTargetVal uint32
+			maxTargetVal uint32
+			mode         SearchMode
 
 			res []Pair
 		)
@@ -134,18 +135,14 @@ var _ = Describe("Pageのテスト", func() {
 			f, _ := os.Create("test_table")
 			dm = NewDiskManager(f)
 			CreateTestPage(dm)
-
-			stat, _ := f.Stat()
-			fmt.Println("size: ", stat.Size())
 		})
 		JustBeforeEach(func() {
 			p, err = NewPage([4096]byte(dm.ReadPageData(PageID(0))))
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("page: ", p)
 
-			res, err = p.SearchBy(dm, key, mode)
+			res, err = p.SearchBy(dm, minTargetVal, maxTargetVal, mode)
 		})
 		Context("定数での絞り込みの場合", func() {
 			BeforeEach(func() {
@@ -153,7 +150,7 @@ var _ = Describe("Pageのテスト", func() {
 			})
 			Context("対象が見つかった場合", func() {
 				BeforeEach(func() {
-					key = 31
+					minTargetVal = 31
 				})
 				It("resは27のペア", func() {
 					Expect(res[0]).To(Equal(Pair{31, 31}))
@@ -164,7 +161,7 @@ var _ = Describe("Pageのテスト", func() {
 			})
 			Context("見つからない場合", func() {
 				BeforeEach(func() {
-					key = 5
+					minTargetVal = 5
 				})
 				It("resは空", func() {
 					Expect(len(res)).To(Equal(0))
@@ -177,16 +174,58 @@ var _ = Describe("Pageのテスト", func() {
 		// 複数ページにまたがるように
 		Context("範囲検索の場合", func() {
 			BeforeEach(func() {
-				mode = SearchModeRange
+				// mode = SearchModeGreater
 			})
 			Context("greaterのみの場合", func() {
-				// 20以上
+				// 20より大きい
+				BeforeEach(func() {
+					mode = SearchModeRange
+					minTargetVal = 20
+					maxTargetVal = MaxTargetValue
+				})
+				It("20より大きい値が5つ取れる", func() {
+					Expect(res[0]).To(Equal(Pair{21, 21}))
+					Expect(res[1]).To(Equal(Pair{31, 31}))
+					Expect(res[2]).To(Equal(Pair{36, 36}))
+					Expect(res[3]).To(Equal(Pair{38, 38}))
+					Expect(res[4]).To(Equal(Pair{43, 43}))
+					Expect(res[5]).To(Equal(Pair{46, 46}))
+				})
+				It("errはnil", func() {
+					Expect(err).To(BeNil())
+				})
 			})
 			Context("lessのみの場合", func() {
-				// 4以下
+				// 4未満
+				BeforeEach(func() {
+					mode = SearchModeRange
+					minTargetVal = MinTargetValue
+					maxTargetVal = 4
+				})
+				It("4未満の値が3つ取れる", func() {
+					Expect(res[0]).To(Equal(Pair{1, 1}))
+					Expect(res[1]).To(Equal(Pair{2, 2}))
+				})
+				It("errはnil", func() {
+					Expect(err).To(BeNil())
+				})
 			})
 			Context("下限上限両方指定されている場合", func() {
-				// 5以上15以下
+				// 5より大きい15未満
+				BeforeEach(func() {
+					mode = SearchModeRange
+					minTargetVal = 5
+					maxTargetVal = 15
+				})
+				It("5以上15以下の値が4つ取れる", func() {
+					Expect(res[0]).To(Equal(Pair{6, 6}))
+					Expect(res[1]).To(Equal(Pair{7, 10}))
+					Expect(res[2]).To(Equal(Pair{12, 12}))
+					Expect(res[3]).To(Equal(Pair{13, 13}))
+				})
+				It("errはnil", func() {
+					Expect(err).To(BeNil())
+				})
 			})
 		})
 		// TODO IN検索
