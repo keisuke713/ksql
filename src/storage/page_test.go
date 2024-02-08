@@ -116,7 +116,7 @@ var _ = Describe("Pageのテスト", func() {
 			})
 		})
 	})
-	FDescribe("SearchBy", func() {
+	Describe("SearchBy", func() {
 		var (
 			p   *Page
 			err error
@@ -228,7 +228,136 @@ var _ = Describe("Pageのテスト", func() {
 				})
 			})
 		})
-		// TODO IN検索
+	})
+	Describe("SearchByV2", func() {
+		var (
+			p   *Page
+			err error
+
+			dm DiskManager
+
+			minTargetVal uint32
+			maxTargetVal uint32
+			mode         SearchMode
+
+			minPageID *PageID
+			maxPageID *PageID
+		)
+		// TODO
+		// 一回だけ呼ばれれば良いのだが
+		BeforeEach(func() {
+			f, _ := os.Create("test_table")
+			dm = NewDiskManager(f)
+			CreateTestPage(dm)
+		})
+		JustBeforeEach(func() {
+			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(0))))
+			if err != nil {
+				panic(err)
+			}
+			minPageID, maxPageID, err = p.SearchByV2(dm, minTargetVal, maxTargetVal, mode)
+		})
+		JustAfterEach(func() {
+			minPageID = nil
+			maxPageID = nil
+		})
+		Context("定数での絞り込みの場合", func() {
+			BeforeEach(func() {
+				mode = SearchModeConst
+			})
+			Context("対象が見つかった場合", func() {
+				BeforeEach(func() {
+					minTargetVal = 31
+					maxTargetVal = 31
+				})
+				It("minPageIDは10", func() {
+					Expect(*minPageID).To(Equal(PageID(10)))
+				})
+				It("maxPageIDは10", func() {
+					Expect(*maxPageID).To(Equal(PageID(10)))
+				})
+				It("errはnil", func() {
+					Expect(err).To(BeNil())
+				})
+			})
+			Context("見つからない場合", func() {
+				BeforeEach(func() {
+					minTargetVal = 5
+					maxTargetVal = 5
+				})
+				It("minPageIDは6", func() {
+					Expect(*minPageID).To(Equal(PageID(6)))
+				})
+				It("maxPageIDはnil", func() {
+					Expect(*maxPageID).To(Equal(PageID(6)))
+				})
+				It("errはnil", func() {
+					Expect(err).To(BeNil())
+				})
+			})
+		})
+		// 複数ページにまたがるように
+		Context("範囲検索の場合", func() {
+			BeforeEach(func() {
+				mode = SearchModeRange
+			})
+			Context("greaterのみの場合", func() {
+				// 20より大きい
+				BeforeEach(func() {
+					minTargetVal = 20
+					maxTargetVal = MaxTargetValue
+				})
+				Context("対象が見つかった場合", func() {
+					It("minPageIDは9", func() {
+						Expect(*minPageID).To(Equal(PageID(9)))
+					})
+					It("maxPageIDは12", func() {
+						Expect(*maxPageID).To(Equal(PageID(12)))
+					})
+					It("errはnil", func() {
+						Expect(err).To(BeNil())
+					})
+				})
+			})
+			Context("lessのみの場合", func() {
+				// 4未満
+				BeforeEach(func() {
+					minTargetVal = MinTargetValue
+					maxTargetVal = 4
+				})
+				It("minPageIDは9", func() {
+					Expect(*minPageID).To(Equal(PageID(4)))
+				})
+				It("maxPageIDは12", func() {
+					Expect(*maxPageID).To(Equal(PageID(5)))
+				})
+				It("errはnil", func() {
+					Expect(err).To(BeNil())
+				})
+			})
+			Context("下限上限両方指定されている場合", func() {
+				// 5より大きい15未満
+				BeforeEach(func() {
+					minTargetVal = 5
+					maxTargetVal = 15
+				})
+				It("minPageIDは9", func() {
+					Expect(*minPageID).To(Equal(PageID(6)))
+				})
+				It("maxPageIDは12", func() {
+					Expect(*maxPageID).To(Equal(PageID(9)))
+				})
+				It("errはnil", func() {
+					Expect(err).To(BeNil())
+				})
+			})
+		})
+		// TODO
+		Context("フルスキャン", func() {
+			BeforeEach(func() {
+				mode = SearchModeAll
+			})
+		})
 	})
 })
 

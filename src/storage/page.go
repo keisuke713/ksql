@@ -70,7 +70,6 @@ func (p *Page) SearchBy(dm DiskManager, minTargetVal uint32, maxTargetVal uint32
 }
 
 // TODO
-// min,maxじゃなくてvalSetにしたいいやそれだと上限加減がわからないk？？やっぱり両方必要？
 // IN検索
 // インサート
 // キーだけじゃなく、バリューでも絞り込めるようにする(これはALLですな)
@@ -121,4 +120,60 @@ func (p *Page) searchBy(dm DiskManager, minTargetVal uint32, maxTargetVal uint32
 		return nil, err
 	}
 	return nextPage.searchBy(dm, minTargetVal, maxTargetVal, searchMode, res)
+}
+
+// DONE
+// page.SearchByでは下限上限を元にpageの範囲を求める(あれ、searchModeどこで使う？->ALLだったら全ページ取る必要があるのか)
+
+// TODO
+// iteratorにpageの下限上限とtargetValsetを渡して実際の値を求める(ここではindexを使うのかvalueなのかの判別がしたい)
+// インサート
+// キーだけじゃなく、バリューでも絞り込めるようにする(これはALLですな)
+// Pageのこのメソッド呼ぶ時点ですでに対象のインデックス(ファイル)は決まっているのでindexを指定する必要はない、constかallの判別だけで大丈夫
+func (p *Page) SearchByV2(dm DiskManager, minTargetVal uint32, maxTargetVal uint32, searchMode SearchMode) (*PageID, *PageID, error) {
+	return p.searchByV2(dm, minTargetVal, maxTargetVal, searchMode, nil, nil)
+}
+
+func (p *Page) searchByV2(dm DiskManager, minTargetVal uint32, maxTargetVal uint32, searchMode SearchMode, minPageID *PageID, maxPageID *PageID) (*PageID, *PageID, error) {
+	// leafの場合key >= maxTargetValになるまで続ける
+	if p.NodeType == NodeTypeLeaf {
+		if minPageID == nil {
+			minPageID = &p.PageID
+		}
+		for _, pair := range p.Items {
+			if pair.Key >= maxTargetVal {
+				maxPageID = &p.PageID
+				return minPageID, maxPageID, nil
+			}
+		}
+		// 一番大きい右側のleafならここで終了
+		if p.NextPageID == InvalidPageID {
+			maxPageID = &p.PageID
+			return minPageID, maxPageID, nil
+		}
+		// Page内の全てのKeyがmaxTargetValより小さいなら次のページも見る
+		bytes := dm.ReadPageData(p.NextPageID)
+		nextPage, err := NewPage(bytes)
+		if err != nil {
+			return nil, nil, err
+		}
+		return nextPage.searchByV2(dm, minTargetVal, maxTargetVal, searchMode, minPageID, maxPageID)
+	}
+	// internal nodeの場合、対象のchildIDを探す
+	nextPageID := InvalidPageID
+	for _, pair := range p.Items {
+		if pair.Key > minTargetVal {
+			nextPageID = PageID(pair.Value)
+			break
+		}
+	}
+	if nextPageID == InvalidPageID {
+		nextPageID = PageID(p.RightPointer)
+	}
+	bytes := dm.ReadPageData(nextPageID)
+	nextPage, err := NewPage(bytes)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nextPage.searchByV2(dm, minTargetVal, maxTargetVal, searchMode, minPageID, maxPageID)
 }
