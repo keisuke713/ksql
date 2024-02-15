@@ -394,8 +394,8 @@ var _ = Describe("Pageのテスト", func() {
 					minTargetVal = 5
 					maxTargetVal = 5
 				})
-				It("PageID6のPageが含まれる", func() {
-					Expect(res[0].PageID).To(Equal(PageID(6)))
+				It("PageID5のPageが含まれる", func() {
+					Expect(res[0].PageID).To(Equal(PageID(5)))
 				})
 				It("errはnil", func() {
 					Expect(err).To(BeNil())
@@ -411,11 +411,12 @@ var _ = Describe("Pageのテスト", func() {
 					maxTargetVal = MaxTargetValue
 				})
 				Context("対象が見つかった場合", func() {
-					It("PageID9~12のpageが含まれる", func() {
-						Expect(res[0].PageID).To(Equal(PageID(9)))
-						Expect(res[1].PageID).To(Equal(PageID(10)))
-						Expect(res[2].PageID).To(Equal(PageID(11)))
-						Expect(res[3].PageID).To(Equal(PageID(12)))
+					It("PageID8~12のpageが含まれる", func() {
+						Expect(res[0].PageID).To(Equal(PageID(8)))
+						Expect(res[1].PageID).To(Equal(PageID(9)))
+						Expect(res[2].PageID).To(Equal(PageID(10)))
+						Expect(res[3].PageID).To(Equal(PageID(11)))
+						Expect(res[4].PageID).To(Equal(PageID(12)))
 					})
 					It("errはnil", func() {
 						Expect(err).To(BeNil())
@@ -443,9 +444,10 @@ var _ = Describe("Pageのテスト", func() {
 					maxTargetVal = 15
 				})
 				It("PageID6~8のpageが含まれる", func() {
-					Expect(res[0].PageID).To(Equal(PageID(6)))
-					Expect(res[1].PageID).To(Equal(PageID(7)))
-					Expect(res[2].PageID).To(Equal(PageID(8)))
+					Expect(res[0].PageID).To(Equal(PageID(5)))
+					Expect(res[1].PageID).To(Equal(PageID(6)))
+					Expect(res[2].PageID).To(Equal(PageID(7)))
+					Expect(res[3].PageID).To(Equal(PageID(8)))
 				})
 				It("errはnil", func() {
 					Expect(err).To(BeNil())
@@ -453,7 +455,63 @@ var _ = Describe("Pageのテスト", func() {
 			})
 		})
 	})
+	PDescribe("InsertPair", func() {
+		var (
+			p   *Page
+			err error
+
+			dm DiskManager
+		)
+		BeforeEach(func() {
+			f, _ := os.Create("insert_test_table")
+			dm = NewDiskManager(f)
+			CreateRootPage(dm)
+		})
+		JustBeforeEach(func() {
+			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(0))))
+			if err != nil {
+				panic(err)
+			}
+			var i uint32
+			for i = 0; i < 3; i++ {
+				p.InsertPair(dm, i*10, i*10)
+			}
+
+			// fmt.Println("inserting 2 ...")
+			// leftLeaf, err := NewPage([PageSize]byte(dm.ReadPageData(PageID(1))))
+			// if err != nil {
+			// 	panic(err)
+			// }
+			// leftLeaf.InsertPair(dm, 2, 20)
+
+			// fmt.Println("")
+			// p.PrintAll(dm, "")
+			// leftLeaf2, err := NewPage([PageSize]byte(dm.ReadPageData(PageID(3))))
+			// if err != nil {
+			// 	panic(err)
+			// }
+			// fmt.Printf("pageID3: %+v", leftLeaf2)
+			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(0))))
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("")
+			p.PrintAll(dm, "")
+		})
+		Context("", func() {
+			It("", func() {
+				Expect(1).To(Equal(2))
+			})
+		})
+	})
 })
+
+func CreateRootPage(dm DiskManager) {
+	// id 0
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, InvalidPageID, InvalidPageID, InvalidPageID, InvalidPageID, []Pair{
+		{10, 100},
+	})
+}
 
 // 0がroot
 // 1~3がinternal node
@@ -461,73 +519,74 @@ var _ = Describe("Pageのテスト", func() {
 func CreateTestPage(dm DiskManager) {
 	// rootPage
 	// id 0
-	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, InvalidPageID, InvalidPageID, PageID(3), []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, InvalidPageID, InvalidPageID, InvalidPageID, PageID(3), []Pair{
 		{10, 1},
 		{30, 2},
 	})
 	// internal node
 	// id 1
-	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, InvalidPageID, PageID(2), PageID(6), []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(0), InvalidPageID, PageID(2), PageID(6), []Pair{
 		{2, 4},
 		{5, 5},
 	})
 	// id 2
-	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(1), PageID(3), PageID(9), []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(0), PageID(1), PageID(3), PageID(9), []Pair{
 		{11, 7},
 		{20, 8},
 	})
 	// id 3
-	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(2), InvalidPageID, PageID(12), []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(0), PageID(2), InvalidPageID, PageID(12), []Pair{
 		{32, 10},
 		{40, 11},
 	})
 	// leaf node
 	// id 4
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, InvalidPageID, PageID(5), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(1), InvalidPageID, PageID(5), InvalidPageID, []Pair{
 		{1, 1},
 	})
 	// id 5
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(4), PageID(6), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(1), PageID(4), PageID(6), InvalidPageID, []Pair{
 		{2, 2},
 		{4, 4},
 	})
 	// id 6
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(5), PageID(7), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(1), PageID(5), PageID(7), InvalidPageID, []Pair{
 		{6, 6},
 	})
 	// id 7
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(6), PageID(8), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(2), PageID(6), PageID(8), InvalidPageID, []Pair{
 		{7, 10},
 	})
 	// id 8
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(7), PageID(9), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(2), PageID(7), PageID(9), InvalidPageID, []Pair{
 		{12, 12},
 		{13, 13},
 	})
 	// id 9
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(8), PageID(10), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(2), PageID(8), PageID(10), InvalidPageID, []Pair{
 		{21, 21},
 	})
 	// id 10
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(9), PageID(11), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(3), PageID(9), PageID(11), InvalidPageID, []Pair{
 		{31, 31},
 	})
 	// id 11
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(10), PageID(12), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(3), PageID(10), PageID(12), InvalidPageID, []Pair{
 		{36, 36},
 		{38, 38},
 	})
 	// id 12
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(11), InvalidPageID, InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(3), PageID(11), InvalidPageID, InvalidPageID, []Pair{
 		{43, 43},
 		{46, 46},
 	})
 }
 
-func createTestPage(dm DiskManager, pageID PageID, nodeType NodeType, prevID PageID, nextID PageID, right PageID, kvs []Pair) {
+func createTestPage(dm DiskManager, pageID PageID, nodeType NodeType, parentID, prevID, nextID PageID, right PageID, kvs []Pair) {
 	page := Page{
 		pageID,
 		nodeType,
+		parentID,
 		prevID,
 		nextID,
 		right,
