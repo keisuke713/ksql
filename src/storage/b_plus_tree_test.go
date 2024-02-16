@@ -22,7 +22,7 @@ var _ = Describe("BPustTreeのテスト", func() {
 		})
 		JustBeforeEach(func() {
 			btree = *NewBPlustTree()
-			// btree.RootNodeID = PageID(0)
+			// btree.RootNodeID = PageID(1) // 始点を1にする
 			// btree.InsertPair(dm, 42, 42)
 			var i uint32
 			// key40が消える。2段目に中間ノードとリーフができる。PageID2と4が消える

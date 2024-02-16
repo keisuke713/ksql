@@ -32,7 +32,7 @@ var _ = Describe("DiskManagerのテスト", func() {
 				data[1] = 2
 
 				dm.WritePageData(nextPageID, data)
-				res = dm.ReadPageData(PageID(1))
+				res = dm.ReadPageData(nextPageID)
 			})
 			It("正しいバイトが取得される", func() {
 				Expect(res[0]).To(Equal(byte(1)))

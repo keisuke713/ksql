@@ -10,7 +10,7 @@ type (
 	SearchMode uint8
 	NodeType   uint8
 
-	PageID int32
+	PageID uint32
 
 	Page struct {
 		PageID       PageID   `json:"page_id"`
@@ -25,7 +25,7 @@ type (
 	// leafの時valueは実際のデータ、中間ノードの時は子のページID
 	Pair struct {
 		Key   uint32 `json:"key"`
-		Value int32  `json:"value"`
+		Value uint32 `json:"value"`
 	}
 )
 
@@ -43,7 +43,7 @@ const (
 const (
 	PageSize = 4 * 1_024 // 4KB
 
-	InvalidPageID PageID = -1
+	InvalidPageID PageID = 0
 
 	MinTargetValue uint32 = 0
 	MaxTargetValue uint32 = 4_294_967_295
@@ -255,13 +255,13 @@ func (p *Page) InsertPair(dm DiskManager, key, value uint32) error {
 	for i, item := range p.Items {
 		if item.Key > key {
 			p.Items = append(p.Items[:i+1], p.Items[i:]...)
-			p.Items[i] = Pair{key, int32(value)}
+			p.Items[i] = Pair{key, value}
 			hasInserted = true
 			break
 		}
 	}
 	if !hasInserted {
-		p.Items = append(p.Items, Pair{key, int32(value)})
+		p.Items = append(p.Items, Pair{key, value})
 	}
 	fmt.Printf("p: %+v after insert\n", p)
 	// 元を左に置くver
@@ -398,7 +398,7 @@ func (p *Page) InsertPair(dm DiskManager, key, value uint32) error {
 			p.Items = []Pair{
 				{
 					l.Items[len(l.Items)-1].Key,
-					int32(l.PageID),
+					uint32(l.PageID),
 				},
 			}
 			if err := l.Flush(dm); err != nil {

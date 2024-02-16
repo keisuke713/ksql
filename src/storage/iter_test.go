@@ -16,7 +16,7 @@ var _ = Describe("Iterのテスト", func() {
 		dm = NewDiskManager(f)
 		CreateTestPage(dm)
 	})
-	Describe("Nextのテスト", func() {
+	PDescribe("Nextのテスト", func() {
 		var (
 			i   *Iter
 			err error

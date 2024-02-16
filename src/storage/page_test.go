@@ -32,23 +32,23 @@ var _ = Describe("Pageのテスト", func() {
 					Items: []Pair{
 						{
 							uint32(3),
-							int32(5),
+							uint32(5),
 						},
 						{
 							uint32(6),
-							int32(6),
+							uint32(6),
 						},
 						{
 							uint32(9),
-							int32(7),
+							uint32(7),
 						},
 						{
 							uint32(12),
-							int32(8),
+							uint32(8),
 						},
 						{
 							uint32(15),
-							int32(9),
+							uint32(9),
 						},
 					},
 				}
@@ -77,23 +77,23 @@ var _ = Describe("Pageのテスト", func() {
 					Items: []Pair{
 						{
 							uint32(1),
-							int32(5),
+							uint32(5),
 						},
 						{
 							uint32(2),
-							int32(6),
+							uint32(6),
 						},
 						{
 							uint32(3),
-							int32(7),
+							uint32(7),
 						},
 						{
 							uint32(4),
-							int32(8),
+							uint32(8),
 						},
 						{
 							uint32(5),
-							int32(9),
+							uint32(9),
 						},
 					},
 				}
@@ -135,7 +135,7 @@ var _ = Describe("Pageのテスト", func() {
 	// 		CreateTestPage(dm)
 	// 	})
 	// 	JustBeforeEach(func() {
-	// 		p, err = NewPage([4096]byte(dm.ReadPageData(PageID(0))))
+	// 		p, err = NewPage([4096]byte(dm.ReadPageData(PageID(1))))
 	// 		if err != nil {
 	// 			panic(err)
 	// 		}
@@ -248,7 +248,7 @@ var _ = Describe("Pageのテスト", func() {
 	// 		CreateTestPage(dm)
 	// 	})
 	// 	JustBeforeEach(func() {
-	// 		p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(0))))
+	// 		p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(1))))
 	// 		if err != nil {
 	// 			panic(err)
 	// 		}
@@ -370,7 +370,7 @@ var _ = Describe("Pageのテスト", func() {
 			CreateTestPage(dm)
 		})
 		JustBeforeEach(func() {
-			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(0))))
+			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(1))))
 			if err != nil {
 				panic(err)
 			}
@@ -382,8 +382,8 @@ var _ = Describe("Pageのテスト", func() {
 					minTargetVal = 31
 					maxTargetVal = 31
 				})
-				It("PageID10のPageが含まれる", func() {
-					Expect(res[0].PageID).To(Equal(PageID(10)))
+				It("PageID11のPageが含まれる", func() {
+					Expect(res[0].PageID).To(Equal(PageID(11)))
 				})
 				It("errはnil", func() {
 					Expect(err).To(BeNil())
@@ -394,8 +394,8 @@ var _ = Describe("Pageのテスト", func() {
 					minTargetVal = 5
 					maxTargetVal = 5
 				})
-				It("PageID5のPageが含まれる", func() {
-					Expect(res[0].PageID).To(Equal(PageID(5)))
+				It("PageID6のPageが含まれる", func() {
+					Expect(res[0].PageID).To(Equal(PageID(6)))
 				})
 				It("errはnil", func() {
 					Expect(err).To(BeNil())
@@ -411,12 +411,12 @@ var _ = Describe("Pageのテスト", func() {
 					maxTargetVal = MaxTargetValue
 				})
 				Context("対象が見つかった場合", func() {
-					It("PageID8~12のpageが含まれる", func() {
-						Expect(res[0].PageID).To(Equal(PageID(8)))
-						Expect(res[1].PageID).To(Equal(PageID(9)))
-						Expect(res[2].PageID).To(Equal(PageID(10)))
-						Expect(res[3].PageID).To(Equal(PageID(11)))
-						Expect(res[4].PageID).To(Equal(PageID(12)))
+					It("PageID9~13のpageが含まれる", func() {
+						Expect(res[0].PageID).To(Equal(PageID(9)))
+						Expect(res[1].PageID).To(Equal(PageID(10)))
+						Expect(res[2].PageID).To(Equal(PageID(11)))
+						Expect(res[3].PageID).To(Equal(PageID(12)))
+						Expect(res[4].PageID).To(Equal(PageID(13)))
 					})
 					It("errはnil", func() {
 						Expect(err).To(BeNil())
@@ -429,9 +429,9 @@ var _ = Describe("Pageのテスト", func() {
 					minTargetVal = MinTargetValue
 					maxTargetVal = 4
 				})
-				It("PageID4~5のpageが含まれる", func() {
-					Expect(res[0].PageID).To(Equal(PageID(4)))
-					Expect(res[1].PageID).To(Equal(PageID(5)))
+				It("PageID5~6のpageが含まれる", func() {
+					Expect(res[0].PageID).To(Equal(PageID(5)))
+					Expect(res[1].PageID).To(Equal(PageID(6)))
 				})
 				It("errはnil", func() {
 					Expect(err).To(BeNil())
@@ -443,11 +443,11 @@ var _ = Describe("Pageのテスト", func() {
 					minTargetVal = 5
 					maxTargetVal = 15
 				})
-				It("PageID6~8のpageが含まれる", func() {
-					Expect(res[0].PageID).To(Equal(PageID(5)))
-					Expect(res[1].PageID).To(Equal(PageID(6)))
-					Expect(res[2].PageID).To(Equal(PageID(7)))
-					Expect(res[3].PageID).To(Equal(PageID(8)))
+				It("PageID6~9のpageが含まれる", func() {
+					Expect(res[0].PageID).To(Equal(PageID(6)))
+					Expect(res[1].PageID).To(Equal(PageID(7)))
+					Expect(res[2].PageID).To(Equal(PageID(8)))
+					Expect(res[3].PageID).To(Equal(PageID(9)))
 				})
 				It("errはnil", func() {
 					Expect(err).To(BeNil())
@@ -468,7 +468,7 @@ var _ = Describe("Pageのテスト", func() {
 			CreateRootPage(dm)
 		})
 		JustBeforeEach(func() {
-			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(0))))
+			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(1))))
 			if err != nil {
 				panic(err)
 			}
@@ -491,7 +491,7 @@ var _ = Describe("Pageのテスト", func() {
 			// 	panic(err)
 			// }
 			// fmt.Printf("pageID3: %+v", leftLeaf2)
-			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(0))))
+			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(1))))
 			if err != nil {
 				panic(err)
 			}
@@ -507,76 +507,76 @@ var _ = Describe("Pageのテスト", func() {
 })
 
 func CreateRootPage(dm DiskManager) {
-	// id 0
+	// id 1
 	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, InvalidPageID, InvalidPageID, InvalidPageID, InvalidPageID, []Pair{
 		{10, 100},
 	})
 }
 
-// 0がroot
-// 1~3がinternal node
-// 4~12がleaf
+// 1がroot
+// 2~4がinternal node
+// 5~13がleaf
 func CreateTestPage(dm DiskManager) {
 	// rootPage
-	// id 0
-	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, InvalidPageID, InvalidPageID, InvalidPageID, PageID(3), []Pair{
-		{10, 1},
-		{30, 2},
+	// id 1
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, InvalidPageID, InvalidPageID, InvalidPageID, PageID(4), []Pair{
+		{10, 2},
+		{30, 3},
 	})
 	// internal node
-	// id 1
-	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(0), InvalidPageID, PageID(2), PageID(6), []Pair{
-		{2, 4},
-		{5, 5},
-	})
 	// id 2
-	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(0), PageID(1), PageID(3), PageID(9), []Pair{
-		{11, 7},
-		{20, 8},
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(2), InvalidPageID, PageID(3), PageID(7), []Pair{
+		{2, 5},
+		{5, 6},
 	})
 	// id 3
-	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(0), PageID(2), InvalidPageID, PageID(12), []Pair{
-		{32, 10},
-		{40, 11},
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(2), PageID(2), PageID(4), PageID(10), []Pair{
+		{11, 8},
+		{20, 9},
+	})
+	// id 4
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(2), PageID(3), InvalidPageID, PageID(13), []Pair{
+		{32, 11},
+		{40, 12},
 	})
 	// leaf node
-	// id 4
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(1), InvalidPageID, PageID(5), InvalidPageID, []Pair{
+	// id 5
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(2), InvalidPageID, PageID(6), InvalidPageID, []Pair{
 		{1, 1},
 	})
-	// id 5
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(1), PageID(4), PageID(6), InvalidPageID, []Pair{
+	// id 6
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(2), PageID(5), PageID(7), InvalidPageID, []Pair{
 		{2, 2},
 		{4, 4},
 	})
-	// id 6
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(1), PageID(5), PageID(7), InvalidPageID, []Pair{
-		{6, 6},
-	})
 	// id 7
 	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(2), PageID(6), PageID(8), InvalidPageID, []Pair{
-		{7, 10},
+		{6, 6},
 	})
 	// id 8
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(2), PageID(7), PageID(9), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(3), PageID(7), PageID(9), InvalidPageID, []Pair{
+		{7, 10},
+	})
+	// id 9
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(3), PageID(8), PageID(10), InvalidPageID, []Pair{
 		{12, 12},
 		{13, 13},
 	})
-	// id 9
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(2), PageID(8), PageID(10), InvalidPageID, []Pair{
-		{21, 21},
-	})
 	// id 10
 	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(3), PageID(9), PageID(11), InvalidPageID, []Pair{
-		{31, 31},
+		{21, 21},
 	})
 	// id 11
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(3), PageID(10), PageID(12), InvalidPageID, []Pair{
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(4), PageID(10), PageID(12), InvalidPageID, []Pair{
+		{31, 31},
+	})
+	// id 12
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(4), PageID(11), PageID(13), InvalidPageID, []Pair{
 		{36, 36},
 		{38, 38},
 	})
-	// id 12
-	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(3), PageID(11), InvalidPageID, InvalidPageID, []Pair{
+	// id 13
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(4), PageID(12), InvalidPageID, InvalidPageID, []Pair{
 		{43, 43},
 		{46, 46},
 	})
