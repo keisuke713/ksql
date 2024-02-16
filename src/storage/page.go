@@ -246,12 +246,8 @@ func (p *Page) searchByV3(dm DiskManager, minTargetVal uint32, maxTargetVal uint
 // 1pageにつきpairは二つまで(暫定)
 const maxNumberPair = 2
 
-// 対象のページに新しくkeyvalueを追加する
+// 対象のページに新しくkey-valueを追加する
 // 前提として正しいページに挿入されるものとする
-
-// TODO
-// B+Treeのインサートで呼び出される
-// 追々key-valueは[]byteにしたい
 func (p *Page) InsertPair(dm DiskManager, key, value uint32) error {
 	var hasInserted bool
 	fmt.Println("")
@@ -368,16 +364,29 @@ func (p *Page) InsertPair(dm DiskManager, key, value uint32) error {
 			prevPage.NextPageID = l.PageID
 			prevPage.Flush(dm)
 		}
+		// 新しく作られたノードが中間ノードの場合childNodeのParentIDを更新する
+		// if l.NodeType == NodeTypeBranch {
+		// 	for _, item := range l.Items {
+		// 		bytes := dm.ReadPageData(PageID(item.Value))
+		// 		child, err := NewPage(bytes)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 		child.ParentID = l.PageID
+		// 		child.Flush(dm)
+		// 	}
+		// }
+		l.LinkToChild(dm)
 		// とりあえずpageが親のPageIDを参照できるようにする
 		// rootの場合は中間ノードにして左右に振り分ける
 		if p.ParentID == InvalidPageID {
 			r := Page{
 				dm.AllocatePage(),
-				NodeTypeLeaf,
+				p.NodeType,
 				p.PageID,
 				l.PageID,
 				InvalidPageID,
-				InvalidPageID,
+				p.RightPointer,
 				p.Items,
 			}
 			l.ParentID = p.PageID
@@ -388,7 +397,6 @@ func (p *Page) InsertPair(dm DiskManager, key, value uint32) error {
 			p.RightPointer = r.PageID
 			p.Items = []Pair{
 				{
-					// r.Items[0].Key, // lの最大値の方がいいかや？
 					l.Items[len(l.Items)-1].Key,
 					int32(l.PageID),
 				},
@@ -399,9 +407,10 @@ func (p *Page) InsertPair(dm DiskManager, key, value uint32) error {
 			if err := r.Flush(dm); err != nil {
 				return err
 			}
+			r.LinkToChild(dm)
+			fmt.Printf("newLeft: %+v, newRight: %+v \n", l, r)
 		}
 		if p.ParentID != InvalidPageID {
-			fmt.Printf("newLeft: %+v \n", l)
 			bytes := dm.ReadPageData(p.ParentID)
 			parentPage, err := NewPage(bytes)
 			if err != nil {
@@ -413,13 +422,44 @@ func (p *Page) InsertPair(dm DiskManager, key, value uint32) error {
 			if err := l.Flush(dm); err != nil {
 				return err
 			}
-			// return parentPage.InsertPair(dm, p.Items[0].Key, uint32(l.PageID))
 			return parentPage.InsertPair(dm, l.Items[len(l.Items)-1].Key, uint32(l.PageID))
 		}
 	}
 
 	fmt.Printf("p: %+v right before flush\n", p)
 	return p.Flush(dm)
+}
+
+// ノードの分割などで親と子の結びつきに変更があった際に呼び出す
+func (p *Page) LinkToChild(dm DiskManager) error {
+	// leafは子ノードを持たないのでreturn
+	if p.NodeType == NodeTypeLeaf {
+		return nil
+	}
+
+	for _, item := range p.Items {
+		bytes := dm.ReadPageData(PageID(item.Value))
+		child, err := NewPage(bytes)
+		if err != nil {
+			return err
+		}
+		child.ParentID = p.PageID
+		if err := child.Flush(dm); err != nil {
+			return err
+		}
+	}
+	if p.RightPointer != InvalidPageID {
+		bytes := dm.ReadPageData(p.RightPointer)
+		child, err := NewPage(bytes)
+		if err != nil {
+			return err
+		}
+		child.ParentID = p.PageID
+		if err := child.Flush(dm); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (p *Page) Flush(dm DiskManager) error {
@@ -439,7 +479,7 @@ func (p *Page) Flush(dm DiskManager) error {
 }
 
 // とりあえずデバッグ用で実装する
-// 自身と子ノードを全て表示。順番は考え中
+// 自身と子ノードを全て表示。in-order
 func (p *Page) PrintAll(dm DiskManager, prefix string) {
 	fmt.Printf("%scurrentPage: %+v\n", prefix, p)
 	if p.NodeType == NodeTypeLeaf {

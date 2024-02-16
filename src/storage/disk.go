@@ -13,7 +13,7 @@ type (
 
 	DiskManagerImpl struct {
 		heapFile   *os.File
-		nextPageID uint64
+		nextPageID PageID
 	}
 )
 
@@ -25,7 +25,7 @@ func NewDiskManager(heapFile *os.File) DiskManager {
 	fSize := stat.Size()
 	return &DiskManagerImpl{
 		heapFile:   heapFile,
-		nextPageID: uint64(fSize / PageSize),
+		nextPageID: PageID(fSize / PageSize),
 	}
 }
 
