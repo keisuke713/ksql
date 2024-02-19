@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 )
 
 type (
@@ -67,8 +66,6 @@ func (b *BPlustTree) InsertPair(dm DiskManager, key, value Bytes) error {
 		return errors.New("not found correnponding page")
 	}
 	p := pages[0]
-	fmt.Println("")
-	fmt.Printf("root: %+v, p: %+v. key: %v, value: %v\n", root, p, key, value)
 	return p.InsertPair(dm, key, value)
 }
 

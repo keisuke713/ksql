@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -98,8 +97,6 @@ var _ = Describe("Pageのテスト", func() {
 				bytes = actual.Bytes()
 			})
 			It("デコード後も同じ値になる", func() {
-				fmt.Println(*expected)
-				fmt.Println(*actual)
 				Expect(*expected).To(Equal((*actual)))
 			})
 			It("errはnil", func() {
@@ -133,7 +130,6 @@ var _ = Describe("Pageのテスト", func() {
 			}
 			minBytes := NewBytes(minTargetVal)
 			maxBytes := NewBytes(maxTargetVal)
-			fmt.Printf("minBytes: %+v\n", minBytes)
 			res, err = p.SearchByV3(dm, minBytes, maxBytes, len)
 		})
 		Context("定数での絞り込みの場合", func() {

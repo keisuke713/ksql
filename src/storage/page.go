@@ -2,7 +2,6 @@ package storage
 
 import (
 	"encoding/binary"
-	"fmt"
 )
 
 type (
@@ -147,8 +146,6 @@ const maxNumberPair = 2
 // 前提として正しいページに挿入されるものとする
 func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
 	var hasInserted bool
-	fmt.Println("")
-	fmt.Printf("p: %+v before insert. key: %v, value: %v\n", p, key, value)
 	for i, item := range p.Items {
 		if item.Key.Compare(key, ColumnSize*2) == ComparisonResultBig {
 			p.Items = append(p.Items[:i+1], p.Items[i:]...)
@@ -236,7 +233,6 @@ func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
 		}
 	}
 
-	fmt.Printf("p: %+v right before flush\n", p)
 	return p.Flush(dm)
 }
 
@@ -321,7 +317,6 @@ func (p *Page) Bytes() [PageSize]byte {
 // とりあえずデバッグ用で実装する
 // 自身と子ノードを全て表示。in-order
 func (p *Page) PrintAll(dm DiskManager, prefix string) {
-	fmt.Printf("%scurrentPage: %+v\n", prefix, p)
 	if p.NodeType == NodeTypeLeaf {
 		return
 	}
