@@ -9,10 +9,6 @@ type (
 	BPlustTree struct {
 		RootNodeID PageID
 	}
-
-	// Node struct {
-	// 	*Page
-	// }
 )
 
 func NewBPlustTree() *BPlustTree {
@@ -33,7 +29,21 @@ func (b *BPlustTree) PrintAll(dm DiskManager) {
 	root.PrintAll(dm, "")
 }
 
-func (b *BPlustTree) InsertPair(dm DiskManager, key, value uint32) error {
+func (b *BPlustTree) Slice(dm DiskManager) []Page {
+	if b.RootNodeID == InvalidPageID {
+		return nil
+	}
+	bytes := dm.ReadPageData(b.RootNodeID)
+	root, err := NewPage(bytes)
+	if err != nil {
+		panic(err)
+	}
+	var ps []Page
+	root.Walk(dm, &ps)
+	return ps
+}
+
+func (b *BPlustTree) InsertPair(dm DiskManager, key, value Bytes) error {
 	// rootがnilの場合
 	if b.RootNodeID == InvalidPageID {
 		err := b.CreateRoot(dm)
@@ -48,7 +58,8 @@ func (b *BPlustTree) InsertPair(dm DiskManager, key, value uint32) error {
 	if err != nil {
 		return err
 	}
-	pages, err := root.SearchByV3(dm, key, key)
+	// todo どこでkeyの長さ管理する？
+	pages, err := root.SearchByV3(dm, key, key, ColumnSize)
 	if err != nil {
 		return err
 	}
