@@ -53,6 +53,8 @@ const (
 	PrevPageIDOffset   = 12
 	NextPageIDOffset   = 16
 	RightPointerOffset = 20
+
+	HeaderNByte = RightPointerOffset + 4
 )
 
 func NewPage(b [PageSize]byte) (*Page, error) {
@@ -65,7 +67,7 @@ func NewPage(b [PageSize]byte) (*Page, error) {
 	p.RightPointer = PageID(binary.NativeEndian.Uint32(b[RightPointerOffset : RightPointerOffset+4]))
 
 	var (
-		start uint32 = RightPointerOffset + 4
+		start uint32 = HeaderNByte
 	)
 	for {
 		// キーが始まるバイト数
@@ -291,7 +293,7 @@ func (p *Page) Bytes() [PageSize]byte {
 	binary.NativeEndian.PutUint32(b[NextPageIDOffset:NextPageIDOffset+4], uint32(p.NextPageID))
 	binary.NativeEndian.PutUint32(b[RightPointerOffset:RightPointerOffset+4], uint32(p.RightPointer))
 
-	var start uint32 = RightPointerOffset + 4 // 24バイト目までは固定のヘッダー
+	var start uint32 = HeaderNByte // 24バイト目までは固定のヘッダー
 	var tail uint32 = PageSize
 	for _, item := range p.Items {
 		// キーが何バイト目から始まるか
