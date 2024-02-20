@@ -47,16 +47,25 @@ const (
 	MaxTargetValue uint32 = 4_294_967_295
 )
 
+const (
+	NodeTypeOffset     = 4
+	ParentIDOffset     = 8
+	PrevPageIDOffset   = 12
+	NextPageIDOffset   = 16
+	RightPointerOffset = 20
+)
+
 func NewPage(b [PageSize]byte) (*Page, error) {
 	p := &Page{}
 	p.PageID = PageID(binary.NativeEndian.Uint32(b[:4]))
-	p.NodeType = NodeType(binary.NativeEndian.Uint32(b[4:8]))
-	p.ParentID = PageID(binary.NativeEndian.Uint32(b[8:12]))
-	p.PrevPageID = PageID(binary.NativeEndian.Uint32(b[12:16]))
-	p.NextPageID = PageID(binary.NativeEndian.Uint32(b[16:20]))
-	p.RightPointer = PageID(binary.NativeEndian.Uint32(b[20:24]))
+	p.NodeType = NodeType(binary.NativeEndian.Uint32(b[NodeTypeOffset : NodeTypeOffset+4]))
+	p.ParentID = PageID(binary.NativeEndian.Uint32(b[ParentIDOffset : ParentIDOffset+4]))
+	p.PrevPageID = PageID(binary.NativeEndian.Uint32(b[PrevPageIDOffset : PrevPageIDOffset+4]))
+	p.NextPageID = PageID(binary.NativeEndian.Uint32(b[NextPageIDOffset : NextPageIDOffset+4]))
+	p.RightPointer = PageID(binary.NativeEndian.Uint32(b[RightPointerOffset : RightPointerOffset+4]))
+
 	var (
-		start uint32 = 24
+		start uint32 = RightPointerOffset + 4
 	)
 	for {
 		// キーが始まるバイト数
@@ -276,13 +285,13 @@ func (p *Page) Flush(dm DiskManager) error {
 func (p *Page) Bytes() [PageSize]byte {
 	var b [PageSize]byte
 	binary.NativeEndian.PutUint32(b[:4], uint32(p.PageID))
-	binary.NativeEndian.PutUint32(b[4:8], uint32(p.NodeType))
-	binary.NativeEndian.PutUint32(b[8:12], uint32(p.ParentID))
-	binary.NativeEndian.PutUint32(b[12:16], uint32(p.PrevPageID))
-	binary.NativeEndian.PutUint32(b[16:20], uint32(p.NextPageID))
-	binary.NativeEndian.PutUint32(b[20:24], uint32(p.RightPointer))
+	binary.NativeEndian.PutUint32(b[NodeTypeOffset:NodeTypeOffset+4], uint32(p.NodeType))
+	binary.NativeEndian.PutUint32(b[ParentIDOffset:ParentIDOffset+4], uint32(p.ParentID))
+	binary.NativeEndian.PutUint32(b[PrevPageIDOffset:PrevPageIDOffset+4], uint32(p.PrevPageID))
+	binary.NativeEndian.PutUint32(b[NextPageIDOffset:NextPageIDOffset+4], uint32(p.NextPageID))
+	binary.NativeEndian.PutUint32(b[RightPointerOffset:RightPointerOffset+4], uint32(p.RightPointer))
 
-	var start uint32 = 24 // 24バイト目までは固定のヘッダー
+	var start uint32 = RightPointerOffset + 4 // 24バイト目までは固定のヘッダー
 	var tail uint32 = PageSize
 	for _, item := range p.Items {
 		// キーが何バイト目から始まるか
