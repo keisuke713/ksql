@@ -6,6 +6,23 @@ import (
 )
 
 var _ = Describe("Bytesのテスト", func() {
+	Describe("NewBytes", func() {
+		var (
+			original []uint32
+			res      Bytes
+		)
+		JustBeforeEach(func() {
+			res = NewBytes(original...)
+		})
+		Context("originalが複数の数値を持つ場合", func() {
+			BeforeEach(func() {
+				original = []uint32{256, 256, 1}
+			})
+			It("エンコードされた値が返る", func() {
+				Expect(res).To(Equal(Bytes([]byte{0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0})))
+			})
+		})
+	})
 	Describe("Compare", func() {
 		var (
 			self  Bytes

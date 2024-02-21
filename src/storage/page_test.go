@@ -243,6 +243,55 @@ var _ = Describe("Pageのテスト", func() {
 			})
 		})
 	})
+	Describe("NBytes", func() {
+		var (
+			p     *Page
+			nByte uint32
+		)
+		JustBeforeEach(func() {
+			nByte = p.NBytes()
+		})
+		Context("キーバリューペアが空の場合", func() {
+			BeforeEach(func() {
+				p = &Page{
+					PageID:       PageID(1),
+					NodeType:     NodeTypeBranch,
+					ParentID:     PageID(0),
+					PrevPageID:   PageID(0),
+					NextPageID:   PageID(0),
+					RightPointer: PageID(2),
+				}
+			})
+			It("24バイトが返る", func() {
+				Expect(nByte).To(Equal(uint32(24)))
+			})
+		})
+		Context("キーバリューペアが存在する場合", func() {
+			BeforeEach(func() {
+				p = &Page{
+					PageID:       PageID(1),
+					NodeType:     NodeTypeBranch,
+					ParentID:     PageID(0),
+					PrevPageID:   PageID(0),
+					NextPageID:   PageID(0),
+					RightPointer: PageID(2),
+					Items: []Pair{
+						{
+							NewBytes(1, 2),
+							NewBytes(1, 2, 3),
+						},
+						{
+							NewBytes(255),
+							NewBytes(),
+						},
+					},
+				}
+			})
+			It("72バイトが返る", func() {
+				Expect(nByte).To(Equal(uint32(72)))
+			})
+		})
+	})
 })
 
 func CreateRootPage(dm DiskManager) {

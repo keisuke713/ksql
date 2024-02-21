@@ -55,6 +55,15 @@ const (
 	RightPointerOffset = 20
 
 	HeaderNByte = RightPointerOffset + 4
+
+	// キーのオフセット、長さとバリューの長さをそれぞれ何バイトで保存しているか
+	KeyOffsetNByte = 4
+	KeyLenNByte    = 4
+	ValueLenNByte  = 4
+)
+
+const (
+	MaxNByte = 4 * 1024 // 4KB
 )
 
 func NewPage(b [PageSize]byte) (*Page, error) {
@@ -323,6 +332,20 @@ func (p *Page) Bytes() [PageSize]byte {
 		tail -= item.Key.Len()
 	}
 	return b
+}
+
+// 現在ページ内で使われているバイト数を返す
+func (p *Page) NBytes() uint32 {
+	var totalBytes uint32
+	totalBytes = HeaderNByte
+	for _, i := range p.Items {
+		totalBytes += KeyOffsetNByte
+		totalBytes += KeyLenNByte
+		totalBytes += ValueLenNByte
+		totalBytes += i.Key.Len()
+		totalBytes += i.Value.Len()
+	}
+	return uint32(totalBytes)
 }
 
 // とりあえずデバッグ用で実装する

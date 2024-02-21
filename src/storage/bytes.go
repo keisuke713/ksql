@@ -21,9 +21,11 @@ const (
 	ComparisonResultUnKnown = ComparisonResult(-2)
 )
 
-func NewBytes(val uint32) Bytes {
-	b := make([]byte, 4)
-	binary.NativeEndian.PutUint32(b, val)
+func NewBytes(val ...uint32) Bytes {
+	b := make([]byte, 4*len(val))
+	for i, n := range val {
+		binary.NativeEndian.PutUint32(b[i*4:(i+1)*4], n)
+	}
 	return b
 }
 
