@@ -2,6 +2,9 @@ package storage
 
 import (
 	"encoding/binary"
+	"fmt"
+	"os"
+	"strconv"
 )
 
 type (
@@ -65,6 +68,21 @@ const (
 const (
 	MaxNByte = 4 * 1024 // 4KB
 )
+
+const (
+	// ページサイズというか上限？？？このままだと
+	// PageSize参照しているところ書き換える？
+	KSQLPageSizeKey = "KSQL_PAGE_SIZE"
+)
+
+func GetPageSize() uint32 {
+	if size, ok := os.LookupEnv(KSQLPageSizeKey); ok {
+		if sizei, err := strconv.Atoi(size); err == nil {
+			return uint32(sizei)
+		}
+	}
+	return PageSize
+}
 
 func NewPage(b [PageSize]byte) (*Page, error) {
 	p := &Page{}
@@ -177,7 +195,7 @@ func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
 	if !hasInserted {
 		p.Items = append(p.Items, Pair{key, value})
 	}
-	if len(p.Items) > maxNumberPair {
+	if p.NBytes() > GetPageSize() {
 		// 新しいページを割り当てる
 		newPageID := dm.AllocatePage()
 		// 新しいページに左半分を割り当てる
@@ -351,6 +369,7 @@ func (p *Page) NBytes() uint32 {
 // とりあえずデバッグ用で実装する
 // 自身と子ノードを全て表示。in-order
 func (p *Page) PrintAll(dm DiskManager, prefix string) {
+	fmt.Printf("%s page: %+v \n", prefix, p)
 	if p.NodeType == NodeTypeLeaf {
 		return
 	}
