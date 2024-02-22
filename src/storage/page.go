@@ -44,7 +44,8 @@ const (
 const (
 	PageSize = 4 * 1_024 // 4KB
 
-	InvalidPageID PageID = 0
+	InvalidPageID PageID = 0 // metadataに使うので中間・リーフとしては使われないID
+	RootPageID    PageID = 1
 
 	MinTargetValue uint32 = 0
 	MaxTargetValue uint32 = 4_294_967_295
@@ -70,13 +71,11 @@ const (
 )
 
 const (
-	// ページサイズというか上限？？？このままだと
-	// PageSize参照しているところ書き換える？
-	KSQLPageSizeKey = "KSQL_PAGE_SIZE"
+	BytesSizeLimitKey = "BYTES_SIZE_LIMIT"
 )
 
-func GetPageSize() uint32 {
-	if size, ok := os.LookupEnv(KSQLPageSizeKey); ok {
+func LimitBytesSize() uint32 {
+	if size, ok := os.LookupEnv(BytesSizeLimitKey); ok {
 		if sizei, err := strconv.Atoi(size); err == nil {
 			return uint32(sizei)
 		}
@@ -177,9 +176,6 @@ func (p *Page) searchByV3(dm DiskManager, minTargetVal Bytes, maxTargetVal Bytes
 	return nextPage.searchByV3(dm, minTargetVal, maxTargetVal, res, len)
 }
 
-// 1pageにつきpairは二つまで(暫定)
-const maxNumberPair = 2
-
 // 対象のページに新しくkey-valueを追加する
 // 前提として正しいページに挿入されるものとする
 func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
@@ -195,7 +191,7 @@ func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
 	if !hasInserted {
 		p.Items = append(p.Items, Pair{key, value})
 	}
-	if p.NBytes() > GetPageSize() {
+	if p.NBytes() > LimitBytesSize() {
 		// 新しいページを割り当てる
 		newPageID := dm.AllocatePage()
 		// 新しいページに左半分を割り当てる
@@ -210,8 +206,9 @@ func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
 		}
 		// 元のページのprevを修正
 		p.PrevPageID = newPageID
-		l.Items = p.Items[:maxNumberPair]
-		p.Items = p.Items[maxNumberPair:]
+		itemLen := len(p.Items)
+		l.Items = p.Items[:itemLen/2+1]
+		p.Items = p.Items[itemLen/2+1:]
 		// left-siblingがいた場合nextPageIDを更新する
 		if l.PrevPageID != InvalidPageID {
 			bytes := dm.ReadPageData(l.PrevPageID)

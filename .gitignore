@@ -2,3 +2,6 @@
 
 src/storage/test_*
 src/storage/insert_test_*
+
+todo.md
+table/*

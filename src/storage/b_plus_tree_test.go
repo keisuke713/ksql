@@ -25,7 +25,7 @@ var _ = Describe("BPustTreeのテスト", func() {
 		})
 		JustBeforeEach(func() {
 			btree = *NewBPlustTree()
-			os.Setenv(KSQLPageSizeKey, pageSize)
+			os.Setenv(BytesSizeLimitKey, pageSize)
 			var i uint32
 			for i = 0; i < max; i++ {
 				btree.InsertPair(dm, NewBytes(i), NewBytes(i))

@@ -1,18 +1,32 @@
 package storage
 
 import (
+	"encoding/binary"
 	"errors"
+	"os"
 )
 
 type (
 	BPlustTree struct {
 		RootNodeID PageID
+		KeyLen     uint32
 	}
 )
 
 func NewBPlustTree() *BPlustTree {
 	return &BPlustTree{
 		InvalidPageID,
+		0,
+	}
+}
+
+// ファイルはすでに作らている前提
+func NewBPlustTreeHoge(dm DiskManager, f *os.File) *BPlustTree {
+	metaBytes := dm.ReadPageData(PageID(0))
+	keyLen := binary.NativeEndian.Uint32(metaBytes[:4])
+	return &BPlustTree{
+		RootPageID,
+		keyLen,
 	}
 }
 
