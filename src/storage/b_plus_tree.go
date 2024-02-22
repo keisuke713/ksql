@@ -21,6 +21,9 @@ func NewBPlustTree() *BPlustTree {
 }
 
 // ファイルはすでに作らている前提
+// 最初の4KBはメタデータでそれ以降にノードの情報が入る、キーの長さを動的に指定できるようにする
+// Tableクラス作る？
+// ということでCreate,Insertの動線を整えたい
 func NewBPlustTreeHoge(dm DiskManager, f *os.File) *BPlustTree {
 	metaBytes := dm.ReadPageData(PageID(0))
 	keyLen := binary.NativeEndian.Uint32(metaBytes[:4])
@@ -52,7 +55,7 @@ func (b *BPlustTree) Slice(dm DiskManager) []Page {
 		panic(err)
 	}
 	var ps []Page
-	root.Walk(dm, &ps)
+	root.Walk(dm, &ps, 0)
 	return ps
 }
 
@@ -93,6 +96,7 @@ func (b *BPlustTree) CreateRoot(dm DiskManager) error {
 		InvalidPageID,
 		InvalidPageID,
 		[]Pair{},
+		0,
 	}
 	if err := page.Flush(dm); err != nil {
 		return err

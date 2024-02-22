@@ -37,7 +37,7 @@ func main() {
 		}
 		sum += 1
 		sumLeaf += len(p.Items)
-		buf.WriteString(fmt.Sprintf("start: %+v, end: %+v, len: %+v\n", p.Items[0].Key, p.Items[len(p.Items)-1].Key, len(p.Items)))
+		buf.WriteString(fmt.Sprintf("start: %+v, end: %+v, len: %+v, depth: %+v\n", p.Items[0].Key, p.Items[len(p.Items)-1].Key, len(p.Items), p.Depth))
 	}
 	buf.WriteString(fmt.Sprintf("sum: %+v leaf, item count: %+v \n", sum, sumLeaf))
 	f2, _ := os.Create("leaf_list")

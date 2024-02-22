@@ -21,6 +21,7 @@ type (
 		NextPageID   PageID
 		RightPointer PageID // leafの時は使わない
 		Items        []Pair // `items` 内ではpairはkeyの昇順で並んでいることが保証される
+		Depth        int32  // デバッグで深さを確認する時用に使用する
 	}
 
 	// leafの時valueは実際のデータ、中間ノードの時は子のページID
@@ -203,6 +204,7 @@ func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
 			p.PageID,
 			InvalidPageID,
 			[]Pair{},
+			p.Depth, // 実際は使わない
 		}
 		// 元のページのprevを修正
 		p.PrevPageID = newPageID
@@ -231,6 +233,7 @@ func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
 				InvalidPageID,
 				p.RightPointer,
 				p.Items,
+				p.Depth + 1,
 			}
 			l.ParentID = p.PageID
 			l.NextPageID = r.PageID
@@ -391,7 +394,8 @@ func (p *Page) PrintAll(dm DiskManager, prefix string) {
 	}
 }
 
-func (p *Page) Walk(dm DiskManager, ps *[]Page) {
+func (p *Page) Walk(dm DiskManager, ps *[]Page, depth int32) {
+	p.Depth = depth
 	*ps = append(*ps, *p)
 	if p.NodeType == NodeTypeLeaf {
 		return
@@ -403,7 +407,7 @@ func (p *Page) Walk(dm DiskManager, ps *[]Page) {
 		if err != nil {
 			panic(err)
 		}
-		nextPage.Walk(dm, ps)
+		nextPage.Walk(dm, ps, 1+depth)
 	}
 	if p.RightPointer != InvalidPageID {
 		bytes := dm.ReadPageData(PageID(p.RightPointer))
@@ -411,6 +415,6 @@ func (p *Page) Walk(dm DiskManager, ps *[]Page) {
 		if err != nil {
 			panic(err)
 		}
-		nextPage.Walk(dm, ps)
+		nextPage.Walk(dm, ps, 1+depth)
 	}
 }
