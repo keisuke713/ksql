@@ -111,135 +111,145 @@ var _ = Describe("Pageのテスト", func() {
 
 			dm DiskManager
 
-			minTargetVal uint32
-			maxTargetVal uint32
+			minTargetVal []uint32
+			maxTargetVal []uint32
 
-			len uint32 = ColumnSize
+			len uint32
 
 			res []*Page
 		)
-		BeforeEach(func() {
-			f, _ := os.Create("test_table")
-			dm = NewDiskManager(f)
-			CreateTestPage(dm)
-		})
 		JustBeforeEach(func() {
 			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(1))))
 			if err != nil {
 				panic(err)
 			}
-			minBytes := NewBytes(minTargetVal)
-			maxBytes := NewBytes(maxTargetVal)
+			minBytes := NewBytes(minTargetVal...)
+			maxBytes := NewBytes(maxTargetVal...)
 			res, err = p.SearchByV3(dm, minBytes, maxBytes, len)
 		})
-		Context("定数での絞り込みの場合", func() {
-			Context("対象が見つかった場合", func() {
-				BeforeEach(func() {
-					minTargetVal = 31
-					maxTargetVal = 31
-				})
-				It("PageID11のPageが含まれる", func() {
-					Expect(res[0].PageID).To(Equal(PageID(11)))
-				})
-				It("errはnil", func() {
-					Expect(err).To(BeNil())
-				})
+		Context("キーが1カラム", func() {
+			BeforeEach(func() {
+				f, _ := os.Create("test_table")
+				dm = NewDiskManager(f)
+				NewTable2(dm, ColumnSize)
+				CreateTestPage(dm)
+				len = ColumnSize
 			})
-			Context("見つからない場合", func() {
-				BeforeEach(func() {
-					minTargetVal = 5
-					maxTargetVal = 5
-				})
-				It("PageID6のPageが含まれる", func() {
-					Expect(res[0].PageID).To(Equal(PageID(6)))
-				})
-				It("errはnil", func() {
-					Expect(err).To(BeNil())
-				})
-			})
-		})
-		// 複数ページにまたがるように
-		Context("範囲検索の場合", func() {
-			Context("greaterのみの場合", func() {
-				// 20より大きい
-				BeforeEach(func() {
-					minTargetVal = 20
-					maxTargetVal = MaxTargetValue
-				})
+			Context("定数での絞り込みの場合", func() {
 				Context("対象が見つかった場合", func() {
-					It("PageID9~13のpageが含まれる", func() {
-						Expect(res[0].PageID).To(Equal(PageID(9)))
-						Expect(res[1].PageID).To(Equal(PageID(10)))
-						Expect(res[2].PageID).To(Equal(PageID(11)))
-						Expect(res[3].PageID).To(Equal(PageID(12)))
-						Expect(res[4].PageID).To(Equal(PageID(13)))
+					BeforeEach(func() {
+						minTargetVal = []uint32{31}
+						maxTargetVal = []uint32{31}
+					})
+					It("PageID11のPageが含まれる", func() {
+						Expect(res[0].PageID).To(Equal(PageID(11)))
+					})
+					It("errはnil", func() {
+						Expect(err).To(BeNil())
+					})
+				})
+				Context("見つからない場合", func() {
+					BeforeEach(func() {
+						minTargetVal = []uint32{5}
+						maxTargetVal = []uint32{5}
+					})
+					It("PageID6のPageが含まれる", func() {
+						Expect(res[0].PageID).To(Equal(PageID(6)))
 					})
 					It("errはnil", func() {
 						Expect(err).To(BeNil())
 					})
 				})
 			})
-			Context("lessのみの場合", func() {
-				// 4未満
-				BeforeEach(func() {
-					minTargetVal = MinTargetValue
-					maxTargetVal = 4
+			// 複数ページにまたがるように
+			Context("範囲検索の場合", func() {
+				Context("greaterのみの場合", func() {
+					// 20より大きい
+					BeforeEach(func() {
+						minTargetVal = []uint32{20}
+						maxTargetVal = []uint32{MaxTargetValue}
+					})
+					Context("対象が見つかった場合", func() {
+						It("PageID9~13のpageが含まれる", func() {
+							Expect(res[0].PageID).To(Equal(PageID(9)))
+							Expect(res[1].PageID).To(Equal(PageID(10)))
+							Expect(res[2].PageID).To(Equal(PageID(11)))
+							Expect(res[3].PageID).To(Equal(PageID(12)))
+							Expect(res[4].PageID).To(Equal(PageID(13)))
+						})
+						It("errはnil", func() {
+							Expect(err).To(BeNil())
+						})
+					})
 				})
-				It("PageID5~6のpageが含まれる", func() {
+				Context("lessのみの場合", func() {
+					// 4未満
+					BeforeEach(func() {
+						minTargetVal = []uint32{MinTargetValue}
+						maxTargetVal = []uint32{4}
+					})
+					It("PageID5~6のpageが含まれる", func() {
+						Expect(res[0].PageID).To(Equal(PageID(5)))
+						Expect(res[1].PageID).To(Equal(PageID(6)))
+					})
+					It("errはnil", func() {
+						Expect(err).To(BeNil())
+					})
+				})
+				Context("下限上限両方指定されている場合", func() {
+					// 5より大きい15未満
+					BeforeEach(func() {
+						minTargetVal = []uint32{5}
+						maxTargetVal = []uint32{15}
+					})
+					It("PageID6~9のpageが含まれる", func() {
+						Expect(res[0].PageID).To(Equal(PageID(6)))
+						Expect(res[1].PageID).To(Equal(PageID(7)))
+						Expect(res[2].PageID).To(Equal(PageID(8)))
+						Expect(res[3].PageID).To(Equal(PageID(9)))
+					})
+					It("errはnil", func() {
+						Expect(err).To(BeNil())
+					})
+				})
+			})
+		})
+		Context("キーが2カラムの場合", func() {
+			BeforeEach(func() {
+				f, _ := os.Create("test_multi_column_table")
+				dm = NewDiskManager(f)
+				NewTable2(dm, ColumnSize*2)
+				CreateMultiColumnPage(dm)
+			})
+			Context("1カラム分で検索", func() {
+				BeforeEach(func() {
+					minTargetVal = []uint32{1}
+					maxTargetVal = []uint32{1}
+					len = ColumnSize
+				})
+				It("ID4,5,9のPageが含まれる", func() {
 					Expect(res[0].PageID).To(Equal(PageID(5)))
-					Expect(res[1].PageID).To(Equal(PageID(6)))
+					Expect(res[1].PageID).To(Equal(PageID(4)))
+					Expect(res[2].PageID).To(Equal(PageID(9)))
 				})
 				It("errはnil", func() {
 					Expect(err).To(BeNil())
 				})
 			})
-			Context("下限上限両方指定されている場合", func() {
-				// 5より大きい15未満
+			Context("2カラム分で検索", func() {
 				BeforeEach(func() {
-					minTargetVal = 5
-					maxTargetVal = 15
+					minTargetVal = []uint32{1, 2}
+					maxTargetVal = []uint32{2, 2}
+					len = ColumnSize * 2
 				})
-				It("PageID6~9のpageが含まれる", func() {
-					Expect(res[0].PageID).To(Equal(PageID(6)))
-					Expect(res[1].PageID).To(Equal(PageID(7)))
+				It("ID4,8,9のPageが含まれる", func() {
+					Expect(res[0].PageID).To(Equal(PageID(4)))
+					Expect(res[1].PageID).To(Equal(PageID(9)))
 					Expect(res[2].PageID).To(Equal(PageID(8)))
-					Expect(res[3].PageID).To(Equal(PageID(9)))
 				})
 				It("errはnil", func() {
 					Expect(err).To(BeNil())
 				})
-			})
-		})
-	})
-	PDescribe("InsertPair", func() {
-		var (
-			p   *Page
-			err error
-
-			dm DiskManager
-		)
-		BeforeEach(func() {
-			f, _ := os.Create("insert_test_table")
-			dm = NewDiskManager(f)
-			CreateRootPage(dm)
-		})
-		JustBeforeEach(func() {
-			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(1))))
-			if err != nil {
-				panic(err)
-			}
-			var i uint32
-			for i = 0; i < 3; i++ {
-				p.InsertPair(dm, NewBytes(1<<i), NewBytes(1<<i))
-			}
-			p, err = NewPage([PageSize]byte(dm.ReadPageData(PageID(1))))
-			if err != nil {
-				panic(err)
-			}
-		})
-		Context("", func() {
-			It("", func() {
-				Expect(1).To(Equal(2))
 			})
 		})
 	})
@@ -370,6 +380,80 @@ func CreateTestPage(dm DiskManager) {
 	})
 }
 
+func CreateMultiColumnPage(dm DiskManager) {
+	// rootPage
+	// id 1
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, InvalidPageID, InvalidPageID, InvalidPageID, PageID(7), []Pair{
+		{
+			NewBytes(1, 1),
+			NewBytes(6),
+		},
+		{
+			NewBytes(2, 1),
+			NewBytes(10),
+		},
+	})
+	// leaf node
+	// id 2
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(6), InvalidPageID, PageID(5), InvalidPageID, []Pair{
+		{NewBytes(0, 1), NewBytes(0)},
+		{NewBytes(0, 2), NewBytes(0)},
+	})
+
+	// leaf node
+	// id 3
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(7), PageID(8), InvalidPageID, InvalidPageID, []Pair{
+		{NewBytes(2, 3), NewBytes(6)},
+	})
+
+	// leaf node
+	// id 4
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(10), PageID(5), PageID(9), InvalidPageID, []Pair{
+		{NewBytes(1, 2), NewBytes(2)},
+	})
+
+	// leaf node
+	// id 5
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(6), PageID(2), PageID(4), InvalidPageID, []Pair{
+		{NewBytes(0, 3), NewBytes(0)},
+		{NewBytes(1, 1), NewBytes(1)},
+	})
+
+	// internal node
+	// id 6
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(1), InvalidPageID, PageID(10), InvalidPageID, []Pair{
+		{NewBytes(0, 2), NewBytes(2)},
+		{NewBytes(1, 1), NewBytes(5)},
+	})
+
+	// internal node
+	// id 7
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(1), PageID(10), InvalidPageID, PageID(3), []Pair{
+		{NewBytes(2, 2), NewBytes(8)},
+	})
+
+	// leaf node
+	// id 8
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(7), PageID(9), PageID(3), InvalidPageID, []Pair{
+		{NewBytes(2, 2), NewBytes(4)},
+	})
+
+	// leaf node
+	// id 9
+	createTestPage(dm, dm.AllocatePage(), NodeTypeLeaf, PageID(10), PageID(4), PageID(8), InvalidPageID, []Pair{
+		{NewBytes(1, 3), NewBytes(3)},
+		{NewBytes(2, 1), NewBytes(2)},
+	})
+
+	// internal node
+	// id 10
+	createTestPage(dm, dm.AllocatePage(), NodeTypeBranch, PageID(1), PageID(6), PageID(7), InvalidPageID, []Pair{
+		{NewBytes(1, 2), NewBytes(4)},
+		{NewBytes(2, 1), NewBytes(9)},
+	})
+
+}
+
 func createTestPage(dm DiskManager, pageID PageID, nodeType NodeType, parentID, prevID, nextID PageID, right PageID, kvs []Pair) {
 	page := Page{
 		pageID,
@@ -379,6 +463,7 @@ func createTestPage(dm DiskManager, pageID PageID, nodeType NodeType, parentID, 
 		nextID,
 		right,
 		kvs,
+		0,
 	}
 	b := page.Bytes()
 	dm.WritePageData(pageID, b)

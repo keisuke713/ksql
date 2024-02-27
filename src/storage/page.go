@@ -123,26 +123,23 @@ func NewPage(b [PageSize]byte) (*Page, error) {
 
 // Pageの配列を返す
 
-// DONE
-// page.SearchByでは下限上限を元にpageの範囲を求める(あれ、searchModeどこで使う？->ALLだったら全ページ取る必要があるのか)
-
 // TODO
 // constの場合はmin,maxに同じ値。rangeはそのまま、allはminとmaxに型で上限の値を入れる
-// 呼び出し元でtype(const, range, all)とtargetValを元にPairを取得する？
+// 呼び出し元でtype(const, range, all)とtargetValを元にPairを取得する
 // -> 呼び出し元でtargetValとpairの値を比較していく
 
 // このメソッドを呼ぶ時点ですでに対象のインデックス(ファイル)は決まっているのでindexは渡す必要はない
-func (p *Page) SearchByV3(dm DiskManager, minTargetVal Bytes, maxTargetVal Bytes, len uint32) ([]*Page, error) {
+func (p *Page) SearchByV3(dm DiskManager, minTargetVal, maxTargetVal Bytes, len uint32) ([]*Page, error) {
 	res := make([]*Page, 0)
 	return p.searchByV3(dm, minTargetVal, maxTargetVal, &res, len)
 }
 
-func (p *Page) searchByV3(dm DiskManager, minTargetVal Bytes, maxTargetVal Bytes, res *[]*Page, len uint32) ([]*Page, error) {
+func (p *Page) searchByV3(dm DiskManager, minTargetVal, maxTargetVal Bytes, res *[]*Page, len uint32) ([]*Page, error) {
 	// leafの場合key >= maxTargetValになるまで続ける
 	if p.NodeType == NodeTypeLeaf {
 		*res = append(*res, p)
 		for _, pair := range p.Items {
-			if pair.Key.Compare(maxTargetVal, len) != ComparisonResultSmall {
+			if comRes := pair.Key.Compare(maxTargetVal, len); comRes == ComparisonResultUnKnown || comRes == ComparisonResultBig {
 				return *res, nil
 			}
 		}
@@ -182,7 +179,7 @@ func (p *Page) searchByV3(dm DiskManager, minTargetVal Bytes, maxTargetVal Bytes
 func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
 	var hasInserted bool
 	for i, item := range p.Items {
-		if item.Key.Compare(key, ColumnSize*2) == ComparisonResultBig {
+		if item.Key.Compare(key, item.Key.Len()) == ComparisonResultBig {
 			p.Items = append(p.Items[:i+1], p.Items[i:]...)
 			p.Items[i] = Pair{key, value}
 			hasInserted = true
@@ -233,7 +230,7 @@ func (p *Page) InsertPair(dm DiskManager, key, value Bytes) error {
 				InvalidPageID,
 				p.RightPointer,
 				p.Items,
-				p.Depth + 1,
+				p.Depth,
 			}
 			l.ParentID = p.PageID
 			l.NextPageID = r.PageID

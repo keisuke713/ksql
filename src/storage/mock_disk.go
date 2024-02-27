@@ -15,3 +15,7 @@ func (dm MockDiskManagerImpl) ReadPageData(pageID PageID) [PageSize]byte {
 }
 
 func (dm MockDiskManagerImpl) WritePageData(pageID PageID, data [PageSize]byte) {}
+
+func (dm MockDiskManagerImpl) FSize() int64 {
+	return 0
+}

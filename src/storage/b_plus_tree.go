@@ -3,7 +3,6 @@ package storage
 import (
 	"encoding/binary"
 	"errors"
-	"os"
 )
 
 type (
@@ -13,22 +12,22 @@ type (
 	}
 )
 
-func NewBPlustTree() *BPlustTree {
-	return &BPlustTree{
-		InvalidPageID,
-		0,
-	}
-}
-
 // ファイルはすでに作らている前提
-// 最初の4KBはメタデータでそれ以降にノードの情報が入る、キーの長さを動的に指定できるようにする
 // Tableクラス作る？
 // ということでCreate,Insertの動線を整えたい
-func NewBPlustTreeHoge(dm DiskManager, f *os.File) *BPlustTree {
+func NewBPlustTree(dm DiskManager) *BPlustTree {
 	metaBytes := dm.ReadPageData(PageID(0))
 	keyLen := binary.NativeEndian.Uint32(metaBytes[:4])
+
+	// PageID1がルートの情報なので
+	// ファイルサイズが4KBを超える場合はルートのーどが存在すると判断してセットする
+	fSize := dm.FSize()
+	rootPageID := InvalidPageID
+	if fSize > PageSize {
+		rootPageID = RootPageID
+	}
 	return &BPlustTree{
-		RootPageID,
+		rootPageID,
 		keyLen,
 	}
 }
@@ -74,8 +73,8 @@ func (b *BPlustTree) InsertPair(dm DiskManager, key, value Bytes) error {
 	if err != nil {
 		return err
 	}
-	// todo どこでkeyの長さ管理する？
-	pages, err := root.SearchByV3(dm, key, key, ColumnSize)
+
+	pages, err := root.SearchByV3(dm, key, key, b.KeyLen)
 	if err != nil {
 		return err
 	}

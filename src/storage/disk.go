@@ -9,6 +9,7 @@ type (
 		AllocatePage() PageID
 		ReadPageData(pageID PageID) [PageSize]byte
 		WritePageData(pageID PageID, data [PageSize]byte)
+		FSize() int64
 	}
 
 	DiskManagerImpl struct {
@@ -25,7 +26,7 @@ func NewDiskManager(heapFile *os.File) DiskManager {
 	fSize := stat.Size()
 	return &DiskManagerImpl{
 		heapFile:   heapFile,
-		nextPageID: PageID(fSize/PageSize) + 1,
+		nextPageID: PageID(fSize / PageSize),
 	}
 }
 
@@ -62,4 +63,12 @@ func (dm *DiskManagerImpl) WritePageData(pageID PageID, data [PageSize]byte) {
 	offset := PageSize * pageID
 	// pageSizeより大きいデータは書き込まないようにする
 	dm.heapFile.WriteAt(data[:], int64(offset))
+}
+
+func (dm *DiskManagerImpl) FSize() int64 {
+	stat, err := dm.heapFile.Stat()
+	if err != nil {
+		panic(err)
+	}
+	return stat.Size()
 }
