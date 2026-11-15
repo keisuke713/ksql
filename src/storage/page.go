@@ -136,6 +136,7 @@ func (p *Page) SearchByV3(dm DiskManager, minTargetVal, maxTargetVal Bytes, len 
 
 func (p *Page) searchByV3(dm DiskManager, minTargetVal, maxTargetVal Bytes, res *[]*Page, len uint32) ([]*Page, error) {
 	// leafの場合key >= maxTargetValになるまで続ける
+	// fmt.Printf("p: %+v \n", p)
 	if p.NodeType == NodeTypeLeaf {
 		*res = append(*res, p)
 		for _, pair := range p.Items {

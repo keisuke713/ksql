@@ -103,3 +103,15 @@ func (b *BPlustTree) CreateRoot(dm DiskManager) error {
 	b.RootNodeID = rootPageID
 	return nil
 }
+
+func (b *BPlustTree) SearchBy(dm DiskManager, minTargetVal, maxTargetVal Bytes, len uint32) ([]*Page, error) {
+	if b.RootNodeID == InvalidPageID {
+		return nil, nil
+	}
+	bytes := dm.ReadPageData(b.RootNodeID)
+	root, err := NewPage(bytes)
+	if err != nil {
+		return nil, err
+	}
+	return root.SearchByV3(dm, minTargetVal, maxTargetVal, len)
+}
